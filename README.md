@@ -79,6 +79,8 @@ General development docs: [development.md](./development.md).
 
 This includes the local FastAPI and Vite workflow, Docker Compose services, `.env` configuration, and more.
 
+Local database instructions: [database/README.md](./database/README.md).
+
 ## Release Notes
 
 Check the file [release-notes.md](./release-notes.md).
