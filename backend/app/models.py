@@ -1,8 +1,9 @@
 import uuid
 from datetime import UTC, datetime
+from enum import Enum
 
 from pydantic import EmailStr
-from sqlalchemy import DateTime
+from sqlalchemy import Column, DateTime, Enum as SAEnum, Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -110,6 +111,66 @@ class ItemPublic(ItemBase):
 class ItemsPublic(SQLModel):
     data: list[ItemPublic]
     count: int
+
+
+class GradeLetter(str, Enum):
+    A = "A"
+    B = "B"
+    C = "C"
+    D = "D"
+    F = "F"
+    W = "W"
+    I = "I"
+
+
+class Term(SQLModel, table=True):
+    __tablename__ = "terms"
+    __table_args__ = (Index("idx_term_chronology", "academic_year", "semester_name"),)
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    semester_name: str
+    academic_year: int
+
+
+class Course(SQLModel, table=True):
+    __tablename__ = "courses"
+    __table_args__ = (
+        UniqueConstraint("course_code", "term_id", name="uq_course_per_term"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    course_code: str
+    title: str
+    term_id: uuid.UUID = Field(foreign_key="terms.id", nullable=False, ondelete="CASCADE")
+    professor_id: uuid.UUID = Field(foreign_key="professors.id", nullable=True, ondelete="Set Null")
+    grade: GradeLetter | None = Field(
+        default=None,
+        sa_column=Column(SAEnum(GradeLetter, name="grade_letter_enum"), nullable=True),
+    )
+    total_allocated_weight: float = Field(default=0.0, nullable=False)
+
+
+class CourseTask(SQLModel, table=True):
+    __tablename__ = "course_tasks"
+    __table_args__ = (
+        UniqueConstraint("course_id", "task_title", name="uq_task_per_course"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    task_title: str
+    weight: float
+    course_id: uuid.UUID = Field(foreign_key="courses.id", nullable=False, ondelete="CASCADE")
+
+class Professor(SQLModel, table=True):
+    __tablename__ = "professors"
+    __table_args__ = (
+		UniqueConstraint("professor_name", name="uq_professor_name"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    professor_name: str
+    first_name: str | None = Field(default=None)
+    last_name: str | None = Field(default=None)
 
 
 # Generic message
