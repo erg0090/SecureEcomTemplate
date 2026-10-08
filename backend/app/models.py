@@ -192,3 +192,32 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=128)
+
+#---------------------------------------------------------
+# Project1 Tables
+
+class CartItem_ShoppingCart_Link(SQLModel, table=True):
+    __tablename__ = "cart_item_shopping_cart_link"
+
+    cart_item_id: uuid.UUID = Field(foreign_key="cart_items.id", nullable=False, ondelete="CASCADE", primary_key=True)
+    shopping_cart_id: uuid.UUID = Field(foreign_key="shopping_carts.id", nullable=False, ondelete="CASCADE", primary_key=True)
+
+class CartItem(SQLModel, table=True):
+    __tablename__ = "cart_items"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    item: Item
+    shopping_cart: ShoppingCart
+    quantity: int = Field(default=1, ge=0, nullable=False)
+    unit_price: float = Field(default=0.0, nullable=False)
+    description: str | None = Field(default=None)
+
+class ShoppingCart(SQLModel, table=True):
+    __tablename__ = "shopping_carts"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid1, primary_key=True)
+    cart_items: list[CartItem] = Field(default_factory=list)
+    session_key: str = Field(default_factory=uuid.uuid4, nullable=False)
+    active: bool = Field(default=True, nullable=False)
+    expires: datetime | None = Field(default=None)
+    total: float = Field(default=0.0, nullable=False)
